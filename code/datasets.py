@@ -1,15 +1,14 @@
 import os
 import numpy as np
-import cv2
 import pandas as pd
 
 import torch
 from torch.utils.data.dataset import Dataset
-from torchvision import transforms
 
 from PIL import Image, ImageFilter
 
 import utils
+
 
 def get_list_from_filenames(file_path):
     # input:    relative path to .txt file with file names
@@ -18,7 +17,9 @@ def get_list_from_filenames(file_path):
         lines = f.read().splitlines()
     return lines
 
+
 class Synhead(Dataset):
+
     def __init__(self, data_dir, csv_path, transform, test=False):
         column_names = ['path', 'bbox_x_min', 'bbox_y_min', 'bbox_x_max', 'bbox_y_max', 'yaw', 'pitch', 'roll']
         tmp_df = pd.read_csv(csv_path, sep=',', names=column_names, index_col=False, encoding="utf-8-sig")
@@ -35,9 +36,13 @@ class Synhead(Dataset):
         img = img.convert('RGB')
 
         x_min, y_min, x_max, y_max, yaw, pitch, roll = self.y_train.iloc[index]
-        x_min = float(x_min); x_max = float(x_max)
-        y_min = float(y_min); y_max = float(y_max)
-        yaw = -float(yaw); pitch = float(pitch); roll = float(roll)
+        x_min = float(x_min)
+        x_max = float(x_max)
+        y_min = float(y_min)
+        y_max = float(y_max)
+        yaw = -float(yaw)
+        pitch = float(pitch)
+        roll = float(roll)
 
         # k = 0.2 to 0.40
         k = np.random.random_sample() * 0.2 + 0.2
@@ -77,8 +82,10 @@ class Synhead(Dataset):
     def __len__(self):
         return self.length
 
+
 class Pose_300W_LP(Dataset):
     # Head pose from 300W-LP dataset
+
     def __init__(self, data_dir, filename_path, transform, img_ext='.jpg', annot_ext='.mat', image_mode='RGB'):
         self.data_dir = data_dir
         self.transform = transform
@@ -99,10 +106,10 @@ class Pose_300W_LP(Dataset):
 
         # Crop the face loosely
         pt2d = utils.get_pt2d_from_mat(mat_path)
-        x_min = min(pt2d[0,:])
-        y_min = min(pt2d[1,:])
-        x_max = max(pt2d[0,:])
-        y_max = max(pt2d[1,:])
+        x_min = min(pt2d[0, :])
+        y_min = min(pt2d[1, :])
+        x_max = max(pt2d[0, :])
+        y_max = max(pt2d[1, :])
 
         # k = 0.2 to 0.40
         k = np.random.random_sample() * 0.2 + 0.2
@@ -148,8 +155,10 @@ class Pose_300W_LP(Dataset):
         # 122,450
         return self.length
 
+
 class Pose_300W_LP_random_ds(Dataset):
     # 300W-LP dataset with random downsampling
+
     def __init__(self, data_dir, filename_path, transform, img_ext='.jpg', annot_ext='.mat', image_mode='RGB'):
         self.data_dir = data_dir
         self.transform = transform
@@ -170,10 +179,10 @@ class Pose_300W_LP_random_ds(Dataset):
 
         # Crop the face loosely
         pt2d = utils.get_pt2d_from_mat(mat_path)
-        x_min = min(pt2d[0,:])
-        y_min = min(pt2d[1,:])
-        x_max = max(pt2d[0,:])
-        y_max = max(pt2d[1,:])
+        x_min = min(pt2d[0, :])
+        y_min = min(pt2d[1, :])
+        x_max = max(pt2d[0, :])
+        y_max = max(pt2d[1, :])
 
         # k = 0.2 to 0.40
         k = np.random.random_sample() * 0.2 + 0.2
@@ -189,7 +198,7 @@ class Pose_300W_LP_random_ds(Dataset):
         yaw = pose[1] * 180 / np.pi
         roll = pose[2] * 180 / np.pi
 
-        ds = 1 + np.random.randint(0,4) * 5
+        ds = 1 + np.random.randint(0, 4) * 5
         original_size = img.size
         img = img.resize((img.size[0] / ds, img.size[1] / ds), resample=Image.NEAREST)
         img = img.resize((original_size[0], original_size[1]), resample=Image.NEAREST)
@@ -223,7 +232,9 @@ class Pose_300W_LP_random_ds(Dataset):
         # 122,450
         return self.length
 
+
 class AFLW2000(Dataset):
+
     def __init__(self, data_dir, filename_path, transform, img_ext='.jpg', annot_ext='.mat', image_mode='RGB'):
         self.data_dir = data_dir
         self.transform = transform
@@ -245,10 +256,10 @@ class AFLW2000(Dataset):
         # Crop the face loosely
         pt2d = utils.get_pt2d_from_mat(mat_path)
 
-        x_min = min(pt2d[0,:])
-        y_min = min(pt2d[1,:])
-        x_max = max(pt2d[0,:])
-        y_max = max(pt2d[1,:])
+        x_min = min(pt2d[0, :])
+        y_min = min(pt2d[1, :])
+        x_max = max(pt2d[0, :])
+        y_max = max(pt2d[1, :])
 
         k = 0.20
         x_min -= 2 * k * abs(x_max - x_min)
@@ -277,8 +288,10 @@ class AFLW2000(Dataset):
         # 2,000
         return self.length
 
+
 class AFLW2000_ds(Dataset):
     # AFLW2000 dataset with fixed downsampling
+
     def __init__(self, data_dir, filename_path, transform, img_ext='.jpg', annot_ext='.mat', image_mode='RGB'):
         self.data_dir = data_dir
         self.transform = transform
@@ -299,10 +312,10 @@ class AFLW2000_ds(Dataset):
 
         # Crop the face loosely
         pt2d = utils.get_pt2d_from_mat(mat_path)
-        x_min = min(pt2d[0,:])
-        y_min = min(pt2d[1,:])
-        x_max = max(pt2d[0,:])
-        y_max = max(pt2d[1,:])
+        x_min = min(pt2d[0, :])
+        y_min = min(pt2d[1, :])
+        x_max = max(pt2d[0, :])
+        y_max = max(pt2d[1, :])
 
         k = 0.20
         x_min -= 2 * k * abs(x_max - x_min)
@@ -336,8 +349,10 @@ class AFLW2000_ds(Dataset):
         # 2,000
         return self.length
 
+
 class AFLW_aug(Dataset):
     # AFLW dataset with flipping
+
     def __init__(self, data_dir, filename_path, transform, img_ext='.jpg', annot_ext='.txt', image_mode='RGB'):
         self.data_dir = data_dir
         self.transform = transform
@@ -390,7 +405,9 @@ class AFLW_aug(Dataset):
         # test: 1,966
         return self.length
 
+
 class AFLW(Dataset):
+
     def __init__(self, data_dir, filename_path, transform, img_ext='.jpg', annot_ext='.txt', image_mode='RGB'):
         self.data_dir = data_dir
         self.transform = transform
@@ -434,7 +451,9 @@ class AFLW(Dataset):
         # test: 1,966
         return self.length
 
+
 class AFW(Dataset):
+
     def __init__(self, data_dir, filename_path, transform, img_ext='.jpg', annot_ext='.txt', image_mode='RGB'):
         self.data_dir = data_dir
         self.transform = transform
@@ -488,7 +507,9 @@ class AFW(Dataset):
         # Around 200
         return self.length
 
+
 class BIWI(Dataset):
+
     def __init__(self, data_dir, filename_path, transform, img_ext='.png', annot_ext='.txt', image_mode='RGB'):
         self.data_dir = data_dir
         self.transform = transform
@@ -533,8 +554,7 @@ class BIWI(Dataset):
                 R.append(l)
 
         R = np.array(R)
-        T = R[3,:]
-        R = R[:3,:]
+        R = R[:3, :]
         pose_annot.close()
 
         R = np.transpose(R)
