@@ -1,45 +1,44 @@
-import sys, os, argparse, time
-
-import numpy as np
-import cv2
-import matplotlib.pyplot as plt
+import sys
+import os
+import argparse
 
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from torch.utils.data import DataLoader
 from torchvision import transforms
 import torchvision
 import torch.backends.cudnn as cudnn
-import torch.nn.functional as F
 
-import datasets, hopenet
+import datasets
+import hopenet
 import torch.utils.model_zoo as model_zoo
+
 
 def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(description='Head pose estimation using the Hopenet network.')
     parser.add_argument('--gpu', dest='gpu_id', help='GPU device id to use [0]',
-            default=0, type=int)
+                        default=0, type=int)
     parser.add_argument('--num_epochs', dest='num_epochs', help='Maximum number of training epochs.',
-          default=5, type=int)
+                        default=5, type=int)
     parser.add_argument('--batch_size', dest='batch_size', help='Batch size.',
-          default=16, type=int)
+                        default=16, type=int)
     parser.add_argument('--lr', dest='lr', help='Base learning rate.',
-          default=0.001, type=float)
+                        default=0.001, type=float)
     parser.add_argument('--dataset', dest='dataset', help='Dataset type.', default='Pose_300W_LP', type=str)
     parser.add_argument('--data_dir', dest='data_dir', help='Directory path for data.',
-          default='', type=str)
+                        default='', type=str)
     parser.add_argument('--filename_list', dest='filename_list', help='Path to text file containing relative paths for every example.',
-          default='', type=str)
-    parser.add_argument('--output_string', dest='output_string', help='String appended to output snapshots.', default = '', type=str)
+                        default='', type=str)
+    parser.add_argument('--output_string', dest='output_string', help='String appended to output snapshots.', default='', type=str)
     parser.add_argument('--alpha', dest='alpha', help='Regression loss coefficient.',
-          default=0.001, type=float)
+                        default=0.001, type=float)
     parser.add_argument('--snapshot', dest='snapshot', help='Path of model snapshot.',
-          default='', type=str)
+                        default='', type=str)
 
     args = parser.parse_args()
     return args
+
 
 def get_ignored_params(model):
     # Generator function that yields ignored params.
@@ -51,6 +50,7 @@ def get_ignored_params(model):
             for name, param in module.named_parameters():
                 yield param
 
+
 def get_non_ignored_params(model):
     # Generator function that yields params that will be optimized.
     b = [model.layer1, model.layer2, model.layer3, model.layer4]
@@ -61,6 +61,7 @@ def get_non_ignored_params(model):
             for name, param in module.named_parameters():
                 yield param
 
+
 def get_fc_params(model):
     # Generator function that yields fc layer params.
     b = [model.fc_yaw, model.fc_pitch, model.fc_roll]
@@ -69,12 +70,14 @@ def get_fc_params(model):
             for name, param in module.named_parameters():
                 yield param
 
+
 def load_filtered_state_dict(model, snapshot):
     # By user apaszke from discuss.pytorch.org
     model_dict = model.state_dict()
     snapshot = {k: v for k, v in snapshot.items() if k in model_dict}
     model_dict.update(snapshot)
     model.load_state_dict(model_dict)
+
 
 if __name__ == '__main__':
     args = parse_args()
@@ -98,9 +101,9 @@ if __name__ == '__main__':
 
     print("Loading data.")
 
-    transformations = transforms.Compose([transforms.Scale(240),
-    transforms.RandomCrop(224), transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+    transformations = transforms.Compose([transforms.Resize(240),
+                                          transforms.RandomCrop(224), transforms.ToTensor(),
+                                          transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
     if args.dataset == 'Pose_300W_LP':
         pose_dataset = datasets.Pose_300W_LP(args.data_dir, args.filename_list, transformations)
@@ -133,14 +136,14 @@ if __name__ == '__main__':
     # Regression loss coefficient
     alpha = args.alpha
 
-    softmax = nn.Softmax().cuda(gpu)
-    idx_tensor = [idx for idx in xrange(66)]
+    softmax = nn.Softmax(dim=1).cuda(gpu)
+    idx_tensor = [idx for idx in range(66)]
     idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
 
     optimizer = torch.optim.Adam([{'params': get_ignored_params(model), 'lr': 0},
                                   {'params': get_non_ignored_params(model), 'lr': args.lr},
                                   {'params': get_fc_params(model), 'lr': args.lr * 5}],
-                                   lr = args.lr)
+                                 lr=args.lr)
 
     print("Ready to train network.")
     for epoch in range(num_epochs):
@@ -148,14 +151,14 @@ if __name__ == '__main__':
             images = Variable(images).cuda(gpu)
 
             # Binned labels
-            label_yaw = Variable(labels[:,0]).cuda(gpu)
-            label_pitch = Variable(labels[:,1]).cuda(gpu)
-            label_roll = Variable(labels[:,2]).cuda(gpu)
+            label_yaw = Variable(labels[:, 0]).cuda(gpu)
+            label_pitch = Variable(labels[:, 1]).cuda(gpu)
+            label_roll = Variable(labels[:, 2]).cuda(gpu)
 
             # Continuous labels
-            label_yaw_cont = Variable(cont_labels[:,0]).cuda(gpu)
-            label_pitch_cont = Variable(cont_labels[:,1]).cuda(gpu)
-            label_roll_cont = Variable(cont_labels[:,2]).cuda(gpu)
+            label_yaw_cont = Variable(cont_labels[:, 0]).cuda(gpu)
+            label_pitch_cont = Variable(cont_labels[:, 1]).cuda(gpu)
+            label_roll_cont = Variable(cont_labels[:, 2]).cuda(gpu)
 
             # Forward pass
             yaw, pitch, roll = model(images)
@@ -197,4 +200,4 @@ if __name__ == '__main__':
         if epoch % 1 == 0 and epoch < num_epochs:
             print("Taking snapshot...")
             torch.save(model.state_dict(),
-            'output/snapshots/' + args.output_string + '_epoch_'+ str(epoch+1) + '.pkl')
+                       'output/snapshots/' + args.output_string + '_epoch_'+ str(epoch +1) + '.pkl')

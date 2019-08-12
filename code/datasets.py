@@ -1,11 +1,9 @@
 import os
 import numpy as np
-import cv2
 import pandas as pd
 
 import torch
 from torch.utils.data.dataset import Dataset
-from torchvision import transforms
 
 from PIL import Image, ImageFilter
 
@@ -21,6 +19,7 @@ def get_list_from_filenames(file_path):
 
 
 class Synhead(Dataset):
+
     def __init__(self, data_dir, csv_path, transform, test=False):
         column_names = [
             "path",
@@ -662,7 +661,11 @@ class BIWI(Dataset):
                 R.append(l)
 
         R = np.array(R)
+        # FIXME verify here, the T looks a bit out of place.
+# <<<<<<< HEAD
         T = R[3, :]
+# =======
+# >>>>>>> 842488c3eda33129b1af64b9638b53a70a2ec148
         R = R[:3, :]
         pose_annot.close()
 

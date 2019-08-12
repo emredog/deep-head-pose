@@ -3,9 +3,9 @@ import torch
 
 # from torch.utils.serialization import load_lua
 import os
+
 import scipy.io as sio
 import cv2
-import math
 from math import cos, sin
 
 
@@ -48,7 +48,11 @@ def mse_loss(input, target):
     return torch.sum(torch.abs(input.data - target.data) ** 2)
 
 
+<<<<<<< HEAD
 def plot_pose_cube(img, yaw, pitch, roll, tdx=None, tdy=None, size=150.0):
+=======
+def plot_pose_cube(img, yaw, pitch, roll, tdx=None, tdy=None, size=150.):
+>>>>>>> 842488c3eda33129b1af64b9638b53a70a2ec148
     # Input is a cv2 image
     # pose_params: (pitch, yaw, roll, tdx, tdy)
     # Where (tdx, tdy) is the translation of the face.
@@ -57,7 +61,7 @@ def plot_pose_cube(img, yaw, pitch, roll, tdx=None, tdy=None, size=150.0):
     p = pitch * np.pi / 180
     y = -(yaw * np.pi / 180)
     r = roll * np.pi / 180
-    if tdx != None and tdy != None:
+    if tdx is not None and tdy is not None:
         face_x = tdx - 0.50 * size
         face_y = tdy - 0.50 * size
     else:
@@ -75,6 +79,7 @@ def plot_pose_cube(img, yaw, pitch, roll, tdx=None, tdy=None, size=150.0):
     # Draw base in red
     cv2.line(img, (int(face_x), int(face_y)), (int(x1), int(y1)), (0, 0, 255), 3)
     cv2.line(img, (int(face_x), int(face_y)), (int(x2), int(y2)), (0, 0, 255), 3)
+<<<<<<< HEAD
     cv2.line(
         img,
         (int(x2), int(y2)),
@@ -141,6 +146,20 @@ def plot_pose_cube(img, yaw, pitch, roll, tdx=None, tdy=None, size=150.0):
         (0, 255, 0),
         2,
     )
+=======
+    cv2.line(img, (int(x2), int(y2)), (int(x2 +x1 -face_x), int(y2 +y1 -face_y)), (0, 0, 255), 3)
+    cv2.line(img, (int(x1), int(y1)), (int(x1 +x2 -face_x), int(y1 +y2 -face_y)), (0, 0, 255), 3)
+    # Draw pillars in blue
+    cv2.line(img, (int(face_x), int(face_y)), (int(x3), int(y3)), (255, 0, 0), 2)
+    cv2.line(img, (int(x1), int(y1)), (int(x1 +x3 -face_x), int(y1 +y3 -face_y)), (255, 0, 0), 2)
+    cv2.line(img, (int(x2), int(y2)), (int(x2 +x3 -face_x), int(y2 +y3 -face_y)), (255, 0, 0), 2)
+    cv2.line(img, (int(x2 +x1 -face_x), int(y2 +y1 -face_y)), (int(x3 +x1 +x2 -2 *face_x), int(y3 +y2 +y1 -2 *face_y)), (255, 0, 0), 2)
+    # Draw top in green
+    cv2.line(img, (int(x3 +x1 -face_x), int(y3 +y1 -face_y)), (int(x3 +x1 +x2 -2 *face_x), int(y3 +y2 +y1 -2 *face_y)), (0, 255, 0), 2)
+    cv2.line(img, (int(x2 +x3 -face_x), int(y2 +y3 -face_y)), (int(x3 +x1 +x2 -2 *face_x), int(y3 +y2 +y1 -2 *face_y)), (0, 255, 0), 2)
+    cv2.line(img, (int(x3), int(y3)), (int(x3 +x1 -face_x), int(y3 +y1 -face_y)), (0, 255, 0), 2)
+    cv2.line(img, (int(x3), int(y3)), (int(x3 +x2 -face_x), int(y3 +y2 -face_y)), (0, 255, 0), 2)
+>>>>>>> 842488c3eda33129b1af64b9638b53a70a2ec148
 
     return img
 
@@ -151,7 +170,7 @@ def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size=100):
     yaw = -(yaw * np.pi / 180)
     roll = roll * np.pi / 180
 
-    if tdx != None and tdy != None:
+    if tdx is not None and tdy is not None:
         tdx = tdx
         tdy = tdy
     else:
