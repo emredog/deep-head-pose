@@ -204,7 +204,7 @@ if __name__ == "__main__":
     reg_criterion = nn.MSELoss()
     softmax = nn.Softmax(dim=1)
 
-    if gpu > 0:
+    if gpu >= 0:
         model.cuda(gpu)
         criterion.cuda(gpu)
         reg_criterion.cuda(gpu)
@@ -240,7 +240,7 @@ if __name__ == "__main__":
             label_pitch_cont = Variable(cont_labels[:, 1])
             label_roll_cont = Variable(cont_labels[:, 2])
 
-            if gpu > 0:
+            if gpu >= 0:
                 images.cuda(gpu)
 
                 label_yaw.cuda(gpu)
@@ -283,7 +283,7 @@ if __name__ == "__main__":
             training_stats["loss_roll"].append(loss_roll)
 
             loss_seq = [loss_yaw, loss_pitch, loss_roll]
-            if gpu > 0:
+            if gpu >= 0:
                 grad_seq = [torch.ones(1).cuda(gpu) for _ in range(len(loss_seq))]
             else:
                 grad_seq = [torch.ones(1) for _ in range(len(loss_seq))]
