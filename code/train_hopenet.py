@@ -52,6 +52,13 @@ def parse_args():
         type=str,
     )
     parser.add_argument(
+        "--out_dir",
+        dest="out_dir",
+        help="Directory path for snapshots and loss stats.",
+        default="output/snapshots/",
+        type=str,
+    )
+    parser.add_argument(
         "--filename_list",
         dest="filename_list",
         help="Path to text file containing relative paths for every example.",
@@ -290,13 +297,12 @@ if __name__ == "__main__":
             )
             torch.save(
                 model.state_dict(),
-                "output/snapshots/"
-                + args.output_string
-                + "_epoch_"
-                + str(epoch + 1)
-                + ".pkl",
+                os.path.join(
+                    args.out_dir,
+                    args.output_string + "_epoch_" + str(epoch + 1) + ".pkl",
+                ),
             )
             with open(
-                "output/snapshots/losses" + args.output_string + ".pkl", "wb"
+                os.path.join(args.out_dir, "losses" + args.output_string + ".pkl"), "wb"
             ) as handle:
                 pkl.dump(training_stats, handle)
