@@ -127,9 +127,16 @@ if __name__ == "__main__":
     args = parse_args()
 
     if torch.cuda.is_available():
+        print(
+            "Using CUDA and gpu: {} (torch.cuda.current_device() is {})".format(
+                args.gpu_id, torch.cuda.current_device()
+            )
+        )
+
         cudnn.enabled = True
         gpu = args.gpu_id
     else:
+        print("Warning: Training on CPU.")
         cudnn.enabled = False
         gpu = -1
 
