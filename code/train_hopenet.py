@@ -1,6 +1,7 @@
 import sys
 import os
 import argparse
+import time
 
 import torch
 import torch.nn as nn
@@ -82,10 +83,16 @@ def load_filtered_state_dict(model, snapshot):
 if __name__ == '__main__':
     args = parse_args()
 
-    cudnn.enabled = True
+    if torch.cuda.is_available():
+        cudnn.enabled = True
+        gpu = args.gpu_id
+    else:
+        cudnn.enabled = False
+        gpu = -1
+
     num_epochs = args.num_epochs
     batch_size = args.batch_size
-    gpu = args.gpu_id
+    
 
     if not os.path.exists('output/snapshots'):
         os.makedirs('output/snapshots')
@@ -129,16 +136,24 @@ if __name__ == '__main__':
                                                batch_size=batch_size,
                                                shuffle=True,
                                                num_workers=2)
+    
 
-    model.cuda(gpu)
-    criterion = nn.CrossEntropyLoss().cuda(gpu)
-    reg_criterion = nn.MSELoss().cuda(gpu)
+    idx_tensor = [idx for idx in range(66)]
+    idx_tensor = Variable(torch.FloatTensor(idx_tensor))
+    criterion = nn.CrossEntropyLoss()
+    reg_criterion = nn.MSELoss()
+    softmax = nn.Softmax(dim=1)
+    
+    if gpu > 0:
+        model.cuda(gpu)
+        criterion.cuda(gpu)
+        reg_criterion.cuda(gpu)
+        softmax.cuda(gpu)
+        idx_tensor.cuda(gpu)
+        
+    
     # Regression loss coefficient
     alpha = args.alpha
-
-    softmax = nn.Softmax(dim=1).cuda(gpu)
-    idx_tensor = [idx for idx in range(66)]
-    idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
 
     optimizer = torch.optim.Adam([{'params': get_ignored_params(model), 'lr': 0},
                                   {'params': get_non_ignored_params(model), 'lr': args.lr},
@@ -147,18 +162,31 @@ if __name__ == '__main__':
 
     print("Ready to train network.")
     for epoch in range(num_epochs):
+        start = time.time()
         for i, (images, labels, cont_labels, name) in enumerate(train_loader):
-            images = Variable(images).cuda(gpu)
+            images = Variable(images)
 
             # Binned labels
-            label_yaw = Variable(labels[:, 0]).cuda(gpu)
-            label_pitch = Variable(labels[:, 1]).cuda(gpu)
-            label_roll = Variable(labels[:, 2]).cuda(gpu)
+            label_yaw = Variable(labels[:, 0])
+            label_pitch = Variable(labels[:, 1])
+            label_roll = Variable(labels[:, 2])
 
             # Continuous labels
-            label_yaw_cont = Variable(cont_labels[:, 0]).cuda(gpu)
-            label_pitch_cont = Variable(cont_labels[:, 1]).cuda(gpu)
-            label_roll_cont = Variable(cont_labels[:, 2]).cuda(gpu)
+            label_yaw_cont = Variable(cont_labels[:, 0])
+            label_pitch_cont = Variable(cont_labels[:, 1])
+            label_roll_cont = Variable(cont_labels[:, 2])
+
+            if gpu > 0:
+                images.cuda(gpu)
+
+                label_yaw.cuda(gpu)
+                label_pitch.cuda(gpu)
+                label_roll.cuda(gpu)
+
+                # Continuous labels
+                label_yaw_cont.cuda(gpu)
+                label_pitch_cont.cuda(gpu)
+                label_roll_cont.cuda(gpu)
 
             # Forward pass
             yaw, pitch, roll = model(images)
@@ -187,17 +215,21 @@ if __name__ == '__main__':
             loss_roll += alpha * loss_reg_roll
 
             loss_seq = [loss_yaw, loss_pitch, loss_roll]
-            grad_seq = [torch.ones(1).cuda(gpu) for _ in range(len(loss_seq))]
+            if gpu > 0:
+                grad_seq = [torch.ones(1).cuda(gpu) for _ in range(len(loss_seq))]
+            else:
+                grad_seq = [torch.ones(1) for _ in range(len(loss_seq))]
             optimizer.zero_grad()
             torch.autograd.backward(loss_seq, grad_seq)
             optimizer.step()
 
-            if (i+1) % 100 == 0:
+            if (i+1) % 1 == 0:
                 print("Epoch [{}/{}], Iter [{}/{}] Losses: Yaw {:.4f}, Pitch {:.4f}, Roll {:.4f}".format(epoch+1, num_epochs, i+1, len(pose_dataset)//batch_size, loss_yaw.data[0], loss_pitch.data[0], loss_roll.data[0]))
-                       
+                 
+        elapsed_time = time.time() - start      
 
         # Save models at numbered epochs.
         if epoch % 1 == 0 and epoch < num_epochs:
-            print("Taking snapshot...")
+            print("Epoch completed in {:.1f} seconds. Taking snapshot...".format(elapsed_time))
             torch.save(model.state_dict(),
                        'output/snapshots/' + args.output_string + '_epoch_'+ str(epoch +1) + '.pkl')
