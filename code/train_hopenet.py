@@ -292,9 +292,9 @@ if __name__ == "__main__":
                         num_epochs,
                         i + 1,
                         len(pose_dataset) // batch_size,
-                        loss_yaw.data[0],
-                        loss_pitch.data[0],
-                        loss_roll.data[0],
+                        loss_yaw.item(),
+                        loss_pitch.item(),
+                        loss_roll.item(),
                     )
                 )
 

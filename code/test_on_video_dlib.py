@@ -182,11 +182,11 @@ if __name__ == "__main__":
                 pitch_predicted = F.softmax(pitch)
                 roll_predicted = F.softmax(roll)
                 # Get continuous predictions in degrees.
-                yaw_predicted = torch.sum(yaw_predicted.data[0] * idx_tensor) * 3 - 99
+                yaw_predicted = torch.sum(yaw_predicted.item() * idx_tensor) * 3 - 99
                 pitch_predicted = (
-                    torch.sum(pitch_predicted.data[0] * idx_tensor) * 3 - 99
+                    torch.sum(pitch_predicted.item() * idx_tensor) * 3 - 99
                 )
-                roll_predicted = torch.sum(roll_predicted.data[0] * idx_tensor) * 3 - 99
+                roll_predicted = torch.sum(roll_predicted.item() * idx_tensor) * 3 - 99
 
                 # Print new frame with cube and axis
                 txt_out.write(

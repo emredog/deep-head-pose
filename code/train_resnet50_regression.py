@@ -199,7 +199,7 @@ if __name__ == "__main__":
                         num_epochs,
                         i + 1,
                         len(pose_dataset) // batch_size,
-                        loss.data[0],
+                        loss.item(),
                     )
                 )
 
