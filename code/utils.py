@@ -177,3 +177,44 @@ def draw_axis(img, yaw, pitch, roll, tdx=None, tdy=None, size=100):
     cv2.line(img, (int(tdx), int(tdy)), (int(x3), int(y3)), (255, 0, 0), 2)
 
     return img
+
+
+# helper functions to create filename.txt files
+def are_angles_compatible(mat_file_path):
+  import utils
+  import numpy as np
+  
+  # Code copied from dataset.py
+  
+  # We get the pose in radians
+  pose = utils.get_ypr_from_mat(mat_file_path)
+  # And convert to degrees.
+  pitch = pose[0] * 180 / np.pi
+  yaw = pose[1] * 180 / np.pi
+  roll = pose[2] * 180 / np.pi
+  return pitch < 99 and pitch > -99 and yaw < 99 and yaw > -99 and roll < 99 and roll > -99
+
+def generate_filenames(dataset_path):
+  import time
+  found = 0
+  using = 0
+  start = time.time()
+  with open(dataset_path + "_filenames.txt", "w") as textfile:  
+    for path, directories, files in os.walk(dataset_path):
+      print(path)
+      if len(files) > 0: # folder with images
+        # FIXME: dirty workaround
+        subdirs = path.split("/")
+        if "300" in dataset_path:
+          subdir = os.path.join(subdirs[-2], subdirs[-1])
+        else:
+          subdir = subdirs[-1]
+        counter = 0
+        for imname in files:
+          if imname.endswith(".jpg"):
+            found += 1
+            if are_angles_compatible(os.path.join(path, imname[:-4]) + ".mat"):
+              using += 1
+              textfile.write(os.path.join(subdir, imname[:-4]) + "\n")
+  elapsed = time.time() - start
+  print("{}: Using/Found {}/{} ({:.1f} sec.)".format(dataset_path, using, found, elapsed))
