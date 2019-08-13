@@ -126,19 +126,7 @@ def load_filtered_state_dict(model, snapshot):
 if __name__ == "__main__":
     args = parse_args()
 
-    if torch.cuda.is_available():
-        print(
-            "Using CUDA and gpu: {} (torch.cuda.current_device() is {})".format(
-                args.gpu_id, torch.cuda.current_device()
-            )
-        )
-
-        cudnn.enabled = True
-        gpu = args.gpu_id
-    else:
-        print("Warning: Training on CPU.")
-        cudnn.enabled = False
-        gpu = -1
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     num_epochs = args.num_epochs
     batch_size = args.batch_size
@@ -211,12 +199,11 @@ if __name__ == "__main__":
     reg_criterion = nn.MSELoss()
     softmax = nn.Softmax(dim=1)
 
-    if gpu >= 0:
-        model.cuda(gpu)
-        criterion.cuda(gpu)
-        reg_criterion.cuda(gpu)
-        softmax.cuda(gpu)
-        idx_tensor.cuda(gpu)
+    model.to(device)
+    criterion.to(device)
+    reg_criterion.to(device)
+    softmax.to(device)
+    idx_tensor.to(device)
 
     # Regression loss coefficient
     alpha = args.alpha
@@ -247,17 +234,16 @@ if __name__ == "__main__":
             label_pitch_cont = Variable(cont_labels[:, 1])
             label_roll_cont = Variable(cont_labels[:, 2])
 
-            if gpu >= 0:
-                images.cuda(gpu)
+            images.to(device)
 
-                label_yaw.cuda(gpu)
-                label_pitch.cuda(gpu)
-                label_roll.cuda(gpu)
+            label_yaw.to(device)
+            label_pitch.to(device)
+            label_roll.to(device)
 
-                # Continuous labels
-                label_yaw_cont.cuda(gpu)
-                label_pitch_cont.cuda(gpu)
-                label_roll_cont.cuda(gpu)
+            # Continuous labels
+            label_yaw_cont.to(device)
+            label_pitch_cont.to(device)
+            label_roll_cont.to(device)
 
             # Forward pass
             yaw, pitch, roll = model(images)
@@ -290,10 +276,7 @@ if __name__ == "__main__":
             training_stats["loss_roll"].append(loss_roll)
 
             loss_seq = [loss_yaw, loss_pitch, loss_roll]
-            if gpu >= 0:
-                grad_seq = [torch.ones(1).cuda(gpu) for _ in range(len(loss_seq))]
-            else:
-                grad_seq = [torch.ones(1) for _ in range(len(loss_seq))]
+            grad_seq = [torch.ones(1).to(device) for _ in range(len(loss_seq))]
             optimizer.zero_grad()
             torch.autograd.backward(loss_seq, grad_seq)
             optimizer.step()
