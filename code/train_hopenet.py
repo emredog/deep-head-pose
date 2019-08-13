@@ -2,6 +2,7 @@ import sys
 import os
 import argparse
 import time
+import pickle as pkl
 
 import torch
 import torch.nn as nn
@@ -223,6 +224,7 @@ if __name__ == "__main__":
     )
 
     print("Ready to train network.")
+    training_stats = {"loss_yaw": [], "loss_pitch": [], "loss_roll": []}
     for epoch in range(num_epochs):
         start = time.time()
         for i, (images, labels, cont_labels, name) in enumerate(train_loader):
@@ -276,6 +278,10 @@ if __name__ == "__main__":
             loss_pitch += alpha * loss_reg_pitch
             loss_roll += alpha * loss_reg_roll
 
+            training_stats["loss_yaw"].append(loss_yaw)
+            training_stats["loss_pitch"].append(loss_pitch)
+            training_stats["loss_roll"].append(loss_roll)
+
             loss_seq = [loss_yaw, loss_pitch, loss_roll]
             if gpu > 0:
                 grad_seq = [torch.ones(1).cuda(gpu) for _ in range(len(loss_seq))]
@@ -315,4 +321,7 @@ if __name__ == "__main__":
                 + str(epoch + 1)
                 + ".pkl",
             )
-
+            with open(
+                "output/snapshots/losses" + args.output_string + ".pkl", "wb"
+            ) as handle:
+                pickle.dump(a, handle)
