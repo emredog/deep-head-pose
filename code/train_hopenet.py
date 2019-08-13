@@ -299,4 +299,4 @@ if __name__ == "__main__":
             with open(
                 "output/snapshots/losses" + args.output_string + ".pkl", "wb"
             ) as handle:
-                pkl.dump(a, handle)
+                pkl.dump(training_stats, handle)
