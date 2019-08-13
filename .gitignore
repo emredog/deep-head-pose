@@ -4,3 +4,5 @@ data/*
 output/*
 *.jpg
 *.png
+.ipynb_checkpoints
+.vscode
