@@ -193,20 +193,16 @@ if __name__ == "__main__":
         dataset=pose_dataset, batch_size=batch_size, shuffle=True, num_workers=2
     )
 
-    idx_tensor = [idx for idx in range(66)]
-    idx_tensor = Variable(torch.FloatTensor(idx_tensor))
-    criterion = nn.CrossEntropyLoss()
-    reg_criterion = nn.MSELoss()
-    softmax = nn.Softmax(dim=1)
-
-    model.to(device)
-    criterion.to(device)
-    reg_criterion.to(device)
-    softmax.to(device)
-    idx_tensor.to(device)
-
+    model = model.to(device)
+    criterion = nn.CrossEntropyLoss().to(device)
+    reg_criterion = nn.MSELoss().to(device)
     # Regression loss coefficient
     alpha = args.alpha
+
+    softmax = nn.Softmax(dim=1).to(device)
+    idx_tensor = [idx for idx in range(66)]
+    # idx_tensor = Variable(torch.FloatTensor(idx_tensor))
+    idx_tensor = torch.FloatTensor(idx_tensor).to(device)
 
     optimizer = torch.optim.Adam(
         [
@@ -222,28 +218,17 @@ if __name__ == "__main__":
     for epoch in range(num_epochs):
         start = time.time()
         for i, (images, labels, cont_labels, name) in enumerate(train_loader):
-            images = Variable(images)
+            images = images.to(device)
 
             # Binned labels
-            label_yaw = Variable(labels[:, 0])
-            label_pitch = Variable(labels[:, 1])
-            label_roll = Variable(labels[:, 2])
+            label_yaw = labels[:, 0].to(device)
+            label_pitch = labels[:, 1].to(device)
+            label_roll = labels[:, 2].to(device)
 
             # Continuous labels
-            label_yaw_cont = Variable(cont_labels[:, 0])
-            label_pitch_cont = Variable(cont_labels[:, 1])
-            label_roll_cont = Variable(cont_labels[:, 2])
-
-            images.to(device)
-
-            label_yaw.to(device)
-            label_pitch.to(device)
-            label_roll.to(device)
-
-            # Continuous labels
-            label_yaw_cont.to(device)
-            label_pitch_cont.to(device)
-            label_roll_cont.to(device)
+            label_yaw_cont = cont_labels[:, 0].to(device)
+            label_pitch_cont = cont_labels[:, 1].to(device)
+            label_roll_cont = cont_labels[:, 2].to(device)
 
             # Forward pass
             yaw, pitch, roll = model(images)
