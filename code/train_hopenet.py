@@ -22,9 +22,6 @@ def parse_args():
         description="Head pose estimation using the Hopenet network."
     )
     parser.add_argument(
-        "--gpu", dest="gpu_id", help="GPU device id to use [0]", default=0, type=int
-    )
-    parser.add_argument(
         "--num_epochs",
         dest="num_epochs",
         help="Maximum number of training epochs.",
