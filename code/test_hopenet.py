@@ -154,6 +154,7 @@ if __name__ == "__main__":
     roll_error = 0.0
 
     l1loss = torch.nn.L1Loss(size_average=False)
+    inference_times = []
 
     for i, (images, labels, cont_labels, name) in enumerate(test_loader):
         images = images.to(device)
@@ -163,7 +164,10 @@ if __name__ == "__main__":
         label_pitch = cont_labels[:, 1].float()
         label_roll = cont_labels[:, 2].float()
 
+        start = time.time()
         yaw, pitch, roll = model(images)
+        elapsed = time.time() - start
+        inference_times.append(elapsed)
 
         # Binned predictions
         _, yaw_bpred = torch.max(yaw.data, 1)
@@ -230,4 +234,5 @@ if __name__ == "__main__":
         + " test images. Yaw: %.4f, Pitch: %.4f, Roll: %.4f"
         % (yaw_error / total, pitch_error / total, roll_error / total)
     )
+    print("Average inference time: {:.6f}ms".format(1000 * np.mean(inference_times)))
 
