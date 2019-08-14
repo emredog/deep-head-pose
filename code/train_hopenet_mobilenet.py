@@ -42,6 +42,13 @@ def parse_args():
         type=str,
     )
     parser.add_argument(
+        "--val_dataset",
+        dest="val_dataset",
+        help="Dataset type.",
+        default="AFLW2000",
+        type=str,
+    )
+    parser.add_argument(
         "--data_dir",
         dest="data_dir",
         help="Directory path for data.",
@@ -58,6 +65,13 @@ def parse_args():
     parser.add_argument(
         "--filename_list",
         dest="filename_list",
+        help="Path to text file containing relative paths for every example.",
+        default="",
+        type=str,
+    )
+    parser.add_argument(
+        "--val_filename_list",
+        dest="val_filename_list",
         help="Path to text file containing relative paths for every example.",
         default="",
         type=str,
@@ -192,6 +206,14 @@ if __name__ == "__main__":
         dataset=pose_dataset, batch_size=batch_size, shuffle=True, num_workers=2
     )
 
+    # FIXME
+    assert args.val_dataset == "AFLW2000"
+    val_dataset = datasets.AFLW(args.data_dir, args.val_filename_list, transformations)
+
+    val_loader = torch.utils.data.DataLoader(
+        dataset=val_dataset, batch_size=batch_size, shuffle=False, num_workers=2
+    )
+
     model = model.to(device)
     criterion = nn.CrossEntropyLoss().to(device)
     reg_criterion = nn.MSELoss().to(device)
@@ -213,7 +235,14 @@ if __name__ == "__main__":
     )
 
     print("Ready to train network.")
-    training_stats = {"loss_yaw": [], "loss_pitch": [], "loss_roll": []}
+    training_stats = {
+        "loss_yaw": [],
+        "loss_pitch": [],
+        "loss_roll": [],
+        "val_yaw_error": [],
+        "val_pitch_error": [],
+        "val_roll_error": [],
+    }
     for epoch in range(num_epochs):
         start = time.time()
         for i, (images, labels, cont_labels, name) in enumerate(train_loader):
@@ -294,6 +323,56 @@ if __name__ == "__main__":
                     args.output_string + "_epoch_" + str(epoch + 1) + ".pkl",
                 ),
             )
+
+            # VALIDATE on "AFLW2000"
+            model.eval()
+            for i, (images, labels, cont_labels, name) in enumerate(val_loader):
+                images = images.to(device)
+                total += cont_labels.size(0)
+
+                label_yaw = cont_labels[:, 0].float()
+                label_pitch = cont_labels[:, 1].float()
+                label_roll = cont_labels[:, 2].float()
+
+                yaw, pitch, roll = model(images)
+
+                # Binned predictions
+                _, yaw_bpred = torch.max(yaw.data, 1)
+                _, pitch_bpred = torch.max(pitch.data, 1)
+                _, roll_bpred = torch.max(roll.data, 1)
+
+                # Continuous predictions
+                yaw_predicted = utils.softmax_temperature(yaw.data, 1)
+                pitch_predicted = utils.softmax_temperature(pitch.data, 1)
+                roll_predicted = utils.softmax_temperature(roll.data, 1)
+
+                yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1).cpu() * 3 - 99
+                pitch_predicted = (
+                    torch.sum(pitch_predicted * idx_tensor, 1).cpu() * 3 - 99
+                )
+                roll_predicted = (
+                    torch.sum(roll_predicted * idx_tensor, 1).cpu() * 3 - 99
+                )
+
+                # Mean absolute error
+                yaw_error += torch.sum(torch.abs(yaw_predicted - label_yaw))
+                pitch_error += torch.sum(torch.abs(pitch_predicted - label_pitch))
+                roll_error += torch.sum(torch.abs(roll_predicted - label_roll))
+
+            yaw_error = yaw_error / total
+            pitch_error = pitch_error / total
+            roll_error = roll_error / total
+            training_stats["val_yaw_error"].append(yaw_error)
+            training_stats["val_pitch_error"].append(pitch_error)
+            training_stats["val_roll_error"].append(roll_error)
+            print(
+                "Validation error in degrees of the model on the "
+                + str(total)
+                + " test images. Yaw: %.4f, Pitch: %.4f, Roll: %.4f"
+                % (yaw_error, pitch_error, roll_error)
+            )
+            model.train()  # back to training mode
+
             with open(
                 os.path.join(args.out_dir, "losses" + args.output_string + ".pkl"), "wb"
             ) as handle:
