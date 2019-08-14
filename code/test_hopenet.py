@@ -5,9 +5,7 @@ import argparse
 import cv2
 
 import torch
-from torch.autograd import Variable
 from torchvision import transforms
-import torch.backends.cudnn as cudnn
 import torchvision
 
 import datasets
@@ -19,9 +17,6 @@ def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(
         description="Head pose estimation using the Hopenet network."
-    )
-    parser.add_argument(
-        "--gpu", dest="gpu_id", help="GPU device id to use [0]", default=0, type=int
     )
     parser.add_argument(
         "--data_dir",
@@ -66,8 +61,7 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    cudnn.enabled = True
-    gpu = args.gpu_id
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     snapshot_path = args.snapshot
 
     # ResNet50 structure
@@ -75,7 +69,7 @@ if __name__ == "__main__":
 
     print("Loading snapshot.")
     # Load snapshot
-    saved_state_dict = torch.load(snapshot_path)
+    saved_state_dict = torch.load(snapshot_path, map_location=torch.device(device))
     model.load_state_dict(saved_state_dict)
 
     print("Loading data.")
@@ -122,7 +116,7 @@ if __name__ == "__main__":
         dataset=pose_dataset, batch_size=args.batch_size, num_workers=2
     )
 
-    model.cuda(gpu)
+    model.to(device)
 
     print("Ready to test network.")
 
@@ -131,7 +125,7 @@ if __name__ == "__main__":
     total = 0
 
     idx_tensor = [idx for idx in range(66)]
-    idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
+    idx_tensor = torch.FloatTensor(idx_tensor).to(device)
 
     yaw_error = 0.0
     pitch_error = 0.0
@@ -140,7 +134,7 @@ if __name__ == "__main__":
     l1loss = torch.nn.L1Loss(size_average=False)
 
     for i, (images, labels, cont_labels, name) in enumerate(test_loader):
-        images = Variable(images).cuda(gpu)
+        images = images.to(device)
         total += cont_labels.size(0)
 
         label_yaw = cont_labels[:, 0].float()
@@ -148,6 +142,7 @@ if __name__ == "__main__":
         label_roll = cont_labels[:, 2].float()
 
         yaw, pitch, roll = model(images)
+        print("yaw.shape", yaw.shape)
 
         # Binned predictions
         _, yaw_bpred = torch.max(yaw.data, 1)
@@ -165,6 +160,12 @@ if __name__ == "__main__":
 
         # Mean absolute error
         yaw_error += torch.sum(torch.abs(yaw_predicted - label_yaw))
+        # print(
+        #     "Mean yaw error for this iteration: {:.3f}".format(
+        #         float(torch.sum(torch.abs(yaw_predicted - label_yaw)))
+        #         / float(cont_labels.size(0))
+        #     )
+        # )
         pitch_error += torch.sum(torch.abs(pitch_predicted - label_pitch))
         roll_error += torch.sum(torch.abs(roll_predicted - label_roll))
 
