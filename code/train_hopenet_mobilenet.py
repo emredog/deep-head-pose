@@ -214,7 +214,7 @@ if __name__ == "__main__":
     )
 
     val_loader = torch.utils.data.DataLoader(
-        dataset=val_dataset, batch_size=batch_size, shuffle=False, num_workers=2
+        dataset=val_dataset, batch_size=batch_size // 2, shuffle=False, num_workers=2
     )
 
     model = model.to(device)
