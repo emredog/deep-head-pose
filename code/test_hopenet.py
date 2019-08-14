@@ -235,5 +235,10 @@ if __name__ == "__main__":
         + " test images. Yaw: %.4f, Pitch: %.4f, Roll: %.4f"
         % (yaw_error / total, pitch_error / total, roll_error / total)
     )
-    print("Average inference time: {:.6f}ms".format(1000 * np.mean(inference_times)))
+
+    print(
+        "Average inference time: {:.6f}ms".format(
+            1000 * (sum(inference_times) / len(inference_times))
+        )
+    )
 
