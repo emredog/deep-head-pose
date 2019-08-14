@@ -10,10 +10,11 @@ from torch.autograd import Variable
 from torchvision import transforms
 import torchvision
 import torch.backends.cudnn as cudnn
+import torch.utils.model_zoo as model_zoo
 
 import datasets
 import hopenet
-import torch.utils.model_zoo as model_zoo
+import utils
 
 
 def parse_args():
