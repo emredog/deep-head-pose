@@ -208,7 +208,9 @@ if __name__ == "__main__":
 
     # FIXME
     assert args.val_dataset == "AFLW2000"
-    val_dataset = datasets.AFLW(args.data_dir, args.val_filename_list, transformations)
+    val_dataset = datasets.AFLW2000(
+        args.data_dir, args.val_filename_list, transformations
+    )
 
     val_loader = torch.utils.data.DataLoader(
         dataset=val_dataset, batch_size=batch_size, shuffle=False, num_workers=2
