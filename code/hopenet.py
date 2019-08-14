@@ -5,24 +5,29 @@ import math
 class Hopenet_mobilenet(nn.Module):
 
     # Hopenet variant with MobileNet backbone
-    def __init__(self, num_bins, pretrained=False):
+    def __init__(self, num_bins, width_mult=1.0, pretrained=False):
         from torchvision.models import mobilenet_v2
 
         super(Hopenet_mobilenet, self).__init__()
-        mobnet = mobilenet_v2(pretrained=pretrained)
+        mobnet = mobilenet_v2(pretrained=pretrained, width_mult=width_mult)
         self.backbone = mobnet.features
 
-        # MAGIC NUMBER
-        mobnet_output_dim = 1280
-        self.fc_yaw = nn.Linear(mobnet_output_dim, num_bins)
-        self.fc_pitch = nn.Linear(mobnet_output_dim, num_bins)
-        self.fc_roll = nn.Linear(mobnet_output_dim, num_bins)
+        self.fc_yaw = nn.Linear(mobnet.last_channel, num_bins)
+        self.fc_pitch = nn.Linear(mobnet.last_channel, num_bins)
+        self.fc_roll = nn.Linear(mobnet.last_channel, num_bins)
 
-        # by default the weights are initialized with kaiming he initialization
+        self.dropout = nn.Dropout(0.2)  # following mobilenet implementation
+
+        # weight init for linear layers
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.zeros_(m.bias)
 
     def forward(self, x):
         x = self.backbone(x)
         x = x.mean([2, 3])  # following mobilenet implementation
+        x = self.dropout(x)
         pre_yaw = self.fc_yaw(x)
         pre_pitch = self.fc_pitch(x)
         pre_roll = self.fc_roll(x)

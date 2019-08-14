@@ -98,6 +98,13 @@ def parse_args():
         default="",
         type=str,
     )
+    parser.add_argument(
+        "--mobilenet_width",
+        dest="mobilenet_width",
+        help="Width coef of the MobileNet.",
+        default=1.0,
+        type=float,
+    )
 
     args = parser.parse_args()
     return args
@@ -154,8 +161,10 @@ if __name__ == "__main__":
     if not os.path.exists("output/snapshots"):
         os.makedirs("output/snapshots")
 
-    # ResNet50 structure
-    model = hopenet.Hopenet_mobilenet(num_bins=66, pretrained=True)
+    # MObilenet backbone
+    model = hopenet.Hopenet_mobilenet(
+        num_bins=66, width_mult=args.mobilenet_width, pretrained=False
+    )
 
     if not args.snapshot == "":
         print("Loading weights from ", args.snapshot)
@@ -237,14 +246,25 @@ if __name__ == "__main__":
     # idx_tensor = Variable(torch.FloatTensor(idx_tensor))
     idx_tensor = torch.FloatTensor(idx_tensor).to(device)
 
-    optimizer = torch.optim.Adam(
-        [
-            # {"params": get_ignored_params(model), "lr": 0},
-            {"params": model.backbone.parameters(), "lr": args.lr},
-            {"params": get_fc_params(model), "lr": args.lr * 5},
-        ],
-        lr=args.lr,
-    )
+    if args.mobilenet_width != 1.0:
+        # training from scratch, so use equal lr for all params
+        optimizer = torch.optim.Adam(
+            [
+                # {"params": get_ignored_params(model), "lr": 0},
+                {"params": model.backbone.parameters(), "lr": args.lr * 5},
+                {"params": get_fc_params(model), "lr": args.lr * 5},
+            ],
+            lr=args.lr,
+        )
+    else:
+        optimizer = torch.optim.Adam(
+            [
+                # {"params": get_ignored_params(model), "lr": 0},
+                {"params": model.backbone.parameters(), "lr": args.lr},
+                {"params": get_fc_params(model), "lr": args.lr * 5},
+            ],
+            lr=args.lr,
+        )
 
     print("Ready to train network.")
     training_stats = {
