@@ -265,7 +265,7 @@ if __name__ == "__main__":
             torch.autograd.backward(loss_seq, grad_seq)
             optimizer.step()
 
-            if (i + 1) % 1 == 0:
+            if (i + 1) % 100 == 0:
                 print(
                     "Epoch [{}/{}], Iter [{}/{}] Losses: Yaw {:.4f}, Pitch {:.4f}, Roll {:.4f}".format(
                         epoch + 1,
