@@ -142,7 +142,6 @@ if __name__ == "__main__":
         label_roll = cont_labels[:, 2].float()
 
         yaw, pitch, roll = model(images)
-        print("yaw.shape", yaw.shape)
 
         # Binned predictions
         _, yaw_bpred = torch.max(yaw.data, 1)
