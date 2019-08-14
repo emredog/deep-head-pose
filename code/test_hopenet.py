@@ -12,12 +12,25 @@ import datasets
 import hopenet
 import utils
 
+backbones = ["resnet", "mobilenet"]
+
 
 def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(
         description="Head pose estimation using the Hopenet network."
     )
+
+    parser.add_argument(
+        "--backbone",
+        dest="backbone",
+        help="Model backbone to use. Default is Resnet50. Avaible values: {}".format(
+            backbones
+        ),
+        default="resnet",
+        type=str,
+    )
+
     parser.add_argument(
         "--data_dir",
         dest="data_dir",
@@ -64,8 +77,17 @@ if __name__ == "__main__":
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     snapshot_path = args.snapshot
 
-    # ResNet50 structure
-    model = hopenet.Hopenet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
+    if args.backbone not in backbones:
+        raise ValueError(
+            "{} is not recognized as a backbone. Please select one of the following: {}".format(
+                args.backbone, backbones
+            )
+        )
+
+    if args.backbone == "resnet":  # ResNet50 structure
+        model = hopenet.Hopenet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
+    elif args.backbone == "mobilenet":  # mobilenet backbone
+        model = hopenet.Hopenet_mobilenet(num_bins=66, pretrained=False)
 
     print("Loading snapshot.")
     # Load snapshot
