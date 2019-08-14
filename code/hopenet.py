@@ -2,6 +2,34 @@ import torch.nn as nn
 import math
 
 
+class Hopenet_mobilenet(nn.Module):
+
+    # Hopenet variant with MobileNet backbone
+    def __init__(self, num_bins, pretrained=False):
+        from torchvision.models import mobilenet_v2
+
+        super(Hopenet_mobilenet, self).__init__()
+        mobnet = mobilenet_v2(pretrained=pretrained)
+        self.backbone = mobnet.features
+
+        # MAGIC NUMBER
+        mobnet_output_dim = 1280
+        self.fc_yaw = nn.Linear(mobnet_output_dim, num_bins)
+        self.fc_pitch = nn.Linear(mobnet_output_dim, num_bins)
+        self.fc_roll = nn.Linear(mobnet_output_dim, num_bins)
+
+        # by default the weights are initialized with kaiming he initialization
+
+    def forward(self, x):
+        x = self.backbone(x)
+        x = x.mean([2, 3])  # following mobilenet implementation
+        pre_yaw = self.fc_yaw(x)
+        pre_pitch = self.fc_pitch(x)
+        pre_roll = self.fc_roll(x)
+
+        return pre_yaw, pre_pitch, pre_roll
+
+
 class Hopenet(nn.Module):
     # Hopenet with 3 output layers for yaw, pitch and roll
     # Predicts Euler angles by binning and regression with the expected value
