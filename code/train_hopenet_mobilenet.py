@@ -328,6 +328,15 @@ if __name__ == "__main__":
 
             # VALIDATE on "AFLW2000"
             model.eval()
+            total = 0
+
+            idx_tensor = [idx for idx in range(66)]
+            idx_tensor = torch.FloatTensor(idx_tensor).to(device)
+
+            yaw_error = 0.0
+            pitch_error = 0.0
+            roll_error = 0.0
+
             for i, (images, labels, cont_labels, name) in enumerate(val_loader):
                 images = images.to(device)
                 total += cont_labels.size(0)
