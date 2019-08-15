@@ -161,7 +161,7 @@ if __name__ == "__main__":
     if not os.path.exists("output/snapshots"):
         os.makedirs("output/snapshots")
 
-    # MObilenet backbone
+    # ShuffleNet backbone
     model = hopenet.Hopenet_shufflenet(
         num_bins=66, shufflenet_mult=args.shufflenet_mult, pretrained=True
     )
