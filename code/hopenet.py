@@ -2,8 +2,52 @@ import torch.nn as nn
 import math
 
 
-class Hopenet_mobilenet(nn.Module):
+class Hopenet_shufflenet(nn.Module):
+    # Hopenet variant with ShuffleNet backbone
+    def __init__(self, num_bins, shufflenet_mult=1.0, pretrained=False):
+        if shufflenet_mult not in [0.5, 1.0, 1.5, 2.0]:
+            raise ValueError(
+                "shufflenet_mult should be one these values: [0.5, 1.0, 1.5, 2.0]"
+            )
+        if shufflenet_mult == 0.5:
+            from torchvision.models import shufflenet_v2_x0_5 as shufflenet_builder
+        elif shufflenet_mult == 1.0:
+            from torchvision.models import shufflenet_v2_x1_0 as shufflenet_builder
+        elif shufflenet_mult == 1.5:
+            from torchvision.models import shufflenet_v2_x1_5 as shufflenet_builder
+        elif shufflenet_mult == 2.0:
+            from torchvision.models import shufflenet_v2_x2_0 as shufflenet_builder
 
+        super(Hopenet_shufflenet, self).__init__()
+        self.backbone = shufflenet_builder(pretrained=pretrained)
+
+        self.fc_yaw = nn.Linear(self.backbone.fc.in_features, num_bins)
+        self.fc_pitch = nn.Linear(self.backbone.fc.in_features, num_bins)
+        self.fc_roll = nn.Linear(self.backbone.fc.in_features, num_bins)
+
+        # weight init for linear layers
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.zeros_(m.bias)
+
+    def forward(self, x):
+        x = self.backbone.conv1(x)
+        x = self.backbone.maxpool(x)
+        x = self.backbone.stage2(x)
+        x = self.backbone.stage3(x)
+        x = self.backbone.stage4(x)
+        x = self.backbone.conv5(x)
+        x = x.mean([2, 3])
+        # so far, the same of the shufflenet implementation of forward function
+        pre_yaw = self.fc_yaw(x)
+        pre_pitch = self.fc_pitch(x)
+        pre_roll = self.fc_roll(x)
+
+        return pre_yaw, pre_pitch, pre_roll
+
+
+class Hopenet_mobilenet(nn.Module):
     # Hopenet variant with MobileNet backbone
     def __init__(self, num_bins, width_mult=1.0, pretrained=False):
         from torchvision.models import mobilenet_v2
