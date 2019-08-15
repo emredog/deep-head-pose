@@ -13,7 +13,7 @@ import datasets
 import hopenet
 import utils
 
-backbones = ["resnet", "mobilenet"]
+backbones = ["resnet", "mobilenet", "shufflenet"]
 
 
 def parse_args():
@@ -50,6 +50,13 @@ def parse_args():
         "--mobilenet_width",
         dest="mobilenet_width",
         help="Width coef of the MobileNet.",
+        default=1.0,
+        type=float,
+    )
+    parser.add_argument(
+        "--shufflenet_mult",
+        dest="shufflenet_mult",
+        help="ShuffleNet capacity multiplier",
         default=1.0,
         type=float,
     )
@@ -97,6 +104,10 @@ if __name__ == "__main__":
     elif args.backbone == "mobilenet":  # mobilenet backbone
         model = hopenet.Hopenet_mobilenet(
             num_bins=66, width_mult=args.mobilenet_width, pretrained=False
+        )
+    elif args.backbone == "shufflenet":  # shufflenet backbone
+        model = hopenet.Hopenet_shufflenet(
+            num_bins=66, shufflenet_mult=args.shufflenet_mult, pretrained=False
         )
 
     print("Loading snapshot.")
