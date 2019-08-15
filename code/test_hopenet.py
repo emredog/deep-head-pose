@@ -47,6 +47,13 @@ def parse_args():
         type=str,
     )
     parser.add_argument(
+        "--mobilenet_width",
+        dest="mobilenet_width",
+        help="Width coef of the MobileNet.",
+        default=1.0,
+        type=float,
+    )
+    parser.add_argument(
         "--snapshot",
         dest="snapshot",
         help="Name of model snapshot.",
@@ -88,7 +95,9 @@ if __name__ == "__main__":
     if args.backbone == "resnet":  # ResNet50 structure
         model = hopenet.Hopenet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
     elif args.backbone == "mobilenet":  # mobilenet backbone
-        model = hopenet.Hopenet_mobilenet(num_bins=66, pretrained=False)
+        model = hopenet.Hopenet_mobilenet(
+            num_bins=66, width_mult=args.mobilenet_width, pretrained=False
+        )
 
     print("Loading snapshot.")
     # Load snapshot
