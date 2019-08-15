@@ -186,12 +186,6 @@ if __name__ == "__main__":
 
         # Mean absolute error
         yaw_error += torch.sum(torch.abs(yaw_predicted - label_yaw))
-        # print(
-        #     "Mean yaw error for this iteration: {:.3f}".format(
-        #         float(torch.sum(torch.abs(yaw_predicted - label_yaw)))
-        #         / float(cont_labels.size(0))
-        #     )
-        # )
         pitch_error += torch.sum(torch.abs(pitch_predicted - label_pitch))
         roll_error += torch.sum(torch.abs(roll_predicted - label_roll))
 
@@ -237,8 +231,8 @@ if __name__ == "__main__":
     )
 
     print(
-        "Average inference time: {:.6f}ms".format(
-            1000 * (sum(inference_times) / len(inference_times))
+        "Average inference time per image: {:.6f}ms".format(
+            1000 * (sum(inference_times) / total)
         )
     )
 
