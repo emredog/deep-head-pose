@@ -1,3 +1,9 @@
+Implementation report can be found on [this evernote page](https://www.evernote.com/shard/s724/sh/32662dc3-c083-4c1c-aa5d-6b329bc00384/7f920f3b5f3ce50dabc2a9669245337b).
+------------------------------------------------------------------------------------------
+
+
+ORIGINAL README STARTS HERE
+
 # Hopenet #
 
 <div align="center">
