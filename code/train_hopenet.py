@@ -177,6 +177,15 @@ if __name__ == "__main__":
         ]
     )
 
+    val_transformations = transforms.Compose(
+        [
+            transforms.Resize(224),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
+
     if args.dataset == "Pose_300W_LP":
         pose_dataset = datasets.Pose_300W_LP(
             args.data_dir, args.filename_list, transformations
