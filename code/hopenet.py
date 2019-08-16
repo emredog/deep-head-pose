@@ -2,6 +2,42 @@ import torch.nn as nn
 import math
 
 
+class Hopenet_squeezenet(nn.Module):
+    # Hopenet variant with ShuffleNet backbone
+    def __init__(self, num_bins, shufflenet_mult=1.0, pretrained=False):
+        from torchvision.models import squeezenet1_1
+
+        super(Hopenet_squeezenet, self).__init__()
+        squeznet = squeezenet1_1(pretrained=pretrained)
+
+        self.backbone = squeznet.features
+
+        self.dropout = nn.Dropout(0.5)  # following squeezenet implementation
+
+        # MAGIC NUMBER : output dimension of squeezenet
+        feats_out_dim = 512
+
+        self.fc_yaw = nn.Linear(feats_out_dim, num_bins)
+        self.fc_pitch = nn.Linear(feats_out_dim, num_bins)
+        self.fc_roll = nn.Linear(feats_out_dim, num_bins)
+
+        # weight init for linear layers
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.zeros_(m.bias)
+
+    def forward(self, x):
+        x = self.backbone(x)
+        x = x.mean([2, 3])  # following mobilenet and shufflenet implementations
+        x = self.dropout(x)
+        pre_yaw = self.fc_yaw(x)
+        pre_pitch = self.fc_pitch(x)
+        pre_roll = self.fc_roll(x)
+
+        return pre_yaw, pre_pitch, pre_roll
+
+
 class Hopenet_shufflenet(nn.Module):
     # Hopenet variant with ShuffleNet backbone
     def __init__(self, num_bins, shufflenet_mult=1.0, pretrained=False):
