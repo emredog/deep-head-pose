@@ -13,7 +13,7 @@ import datasets
 import hopenet
 import utils
 
-backbones = ["resnet", "mobilenet", "shufflenet"]
+backbones = ["resnet", "mobilenet", "shufflenet", "squeezenet"]
 
 
 def parse_args():
@@ -109,6 +109,8 @@ if __name__ == "__main__":
         model = hopenet.Hopenet_shufflenet(
             num_bins=66, shufflenet_mult=args.shufflenet_mult, pretrained=False
         )
+    elif args.backbone == "squeezenet":  # squeezenet backbone
+        model = hopenet.Hopenet_shufflenet(num_bins=66, pretrained=False)
 
     print("Loading snapshot.")
     # Load snapshot
